@@ -52,6 +52,17 @@ public class ResourceRegionMessageWriter implements HttpMessageWriter<ResourceRe
         return Optional.empty();
     }
 
+    private Mono<Void> writeSingleRegion(ResourceRegion region,
+                                                ReactiveHttpOutputMessage message) {
+        return zeroCopy(region.getResource(), region, message)
+                .orElseGet(() -> {
+                    Mono<ResourceRegion> input = Mono.just(region);
+                    MediaType messafeMediaType = message.getHeaders().getContentType();
+                    Flux<DataBuffer> body = this.resourceRegionEncoder.encode(input, message.bufferFactory(), REGION_TYPE, messafeMediaType, Collections.emptyMap());
+                    return message.writeWith(body);
+                });
+    }
+
     @Override
     public List<MediaType> getWritableMediaTypes() {
         return this.mediaTypes;

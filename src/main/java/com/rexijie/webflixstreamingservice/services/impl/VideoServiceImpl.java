@@ -8,7 +8,6 @@ import org.springframework.http.HttpRange;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.Optional;
 
 import static java.lang.Long.min;
 
