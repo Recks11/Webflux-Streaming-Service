@@ -1,5 +1,6 @@
 /target/
 videos/*
+!videos/Kevon-Carter.mp4
 !.mvn/wrapper/maven-wrapper.jar
 
 ### STS ###
