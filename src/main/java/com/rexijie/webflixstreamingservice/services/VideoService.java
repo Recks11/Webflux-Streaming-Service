@@ -7,4 +7,6 @@ import org.springframework.http.HttpHeaders;
 public interface VideoService {
 
     ResourceRegion getRegion(UrlResource resource, HttpHeaders headers);
+
+    UrlResource getResourceByName(String name);
 }
