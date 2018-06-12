@@ -21,6 +21,10 @@ public class VideoRouteHandler {
         this.videoService = videoService;
     }
 
+    public Mono<ServerResponse> returnPath(ServerRequest request) {
+        return ServerResponse.ok().body(Mono.just(request.path()), String.class);
+    }
+
     public Mono<ServerResponse> getPartialVideoByName(ServerRequest request) {
 
         String name = request.pathVariable("name");
@@ -41,6 +45,29 @@ public class VideoRouteHandler {
                     if (response.headers().getContentLength() == 0) {
                         return Mono.error(new VideoNotFoundException());
                     }
+                    return Mono.just(response);
+                });
+    }
+
+    public Mono<ServerResponse> getFullLengthVideo(ServerRequest request) {
+        String fileName = request.pathVariable("name");
+        UrlResource video = videoService.getResourceByName(fileName);
+        long fileLength = 0L;
+        try {
+            fileLength = video.contentLength();
+        } catch (Exception e) {
+            //@TODO (Handle Exception)
+        }
+        return ServerResponse
+                .ok()
+                .contentType(MediaTypeFactory.getMediaType(video)
+                        .orElse(MediaType.APPLICATION_OCTET_STREAM))
+                .contentLength(fileLength)
+                .header(HttpHeaders.CACHE_CONTROL, "no-cache")
+                .body(Mono.just(video), UrlResource.class)
+                .flatMap(response -> {
+                    if (response.headers().getContentLength() == 0)
+                        return Mono.error(new VideoNotFoundException());
                     return Mono.just(response);
                 });
     }

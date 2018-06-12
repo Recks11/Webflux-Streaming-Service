@@ -1,16 +1,16 @@
 package com.rexijie.webflixstreamingservice.config;
 
-import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.codec.ServerCodecConfigurer;
+import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.ViewResolverRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.thymeleaf.spring5.ISpringWebFluxTemplateEngine;
 import org.thymeleaf.spring5.view.reactive.ThymeleafReactiveViewResolver;
 
 @Configuration
-@EnableConfigurationProperties(ThymeleafProperties.class)
+@EnableWebFlux
 public class WebFluxConfig implements WebFluxConfigurer {
 
     private final ISpringWebFluxTemplateEngine templateEngine;
@@ -31,5 +31,10 @@ public class WebFluxConfig implements WebFluxConfigurer {
     @Override
     public void configureViewResolvers(ViewResolverRegistry registry) {
         registry.viewResolver(this.thymeleafChunkAndDataDrivenViewResolver());
+    }
+
+    @Override
+    public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
+        configurer.customCodecs().writer(new ResourceRegionMessageWriter());
     }
 }

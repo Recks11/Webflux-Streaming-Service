@@ -11,4 +11,13 @@ public class Error {
     public String timestamp;
     public String error;
     public Integer status;
+
+    @Override
+    public String toString() {
+        return "{" +
+                "\"timestamp\":\"" + timestamp + '\"' +
+                ", \"error\":\"" + error + '\"' +
+                ", \"status\":" + status +
+                '}';
+    }
 }

@@ -15,12 +15,14 @@ import static java.lang.Long.min;
 
 @Service
 public class VideoServiceImpl implements VideoService {
+    private static int byteLength = 1024;
+    private static long CHUNK_SIZE_LOW = byteLength * 256;
+    private static long CHUNK_SIZE_MED = byteLength * 512;
+    private static long CHUNK_SIZE_HIGH = byteLength * 1024;
+    private static long CHUNK_SIZE_VERY_HIGH = CHUNK_SIZE_HIGH * 2;
 
     @Value("${video.location}")
     private String videoLocation;
-    private static long CHUNK_SIZE_LOW = 50000L;
-    private static long CHUNK_SIZE_MED = 100000L;
-    private static long CHUNK_SIZE_HIGH = 150000L;
 
     @Override
     public ResourceRegion getRegion(UrlResource resource, HttpHeaders headers) {
@@ -33,24 +35,24 @@ public class VideoServiceImpl implements VideoService {
         }
         HttpRange range = headers.getRange().size() != 0 ? headers.getRange().get(0) : null;
 
-            if (range != null) {
-                long start = range.getRangeStart(contentLength);
-                long end = range.getRangeEnd(contentLength);
-                long resourceLength = end - start + 1;
-                long rangeLength = min(CHUNK_SIZE_MED, resourceLength);
+        if (range != null) {
+            long start = range.getRangeStart(contentLength);
+            long end = range.getRangeEnd(contentLength);
+            long resourceLength = end - start + 1;
+            long rangeLength = min(CHUNK_SIZE_MED, resourceLength);
 
-                return new ResourceRegion(resource, start, rangeLength);
-            } else {
-                long rangeLength = min(CHUNK_SIZE_MED, contentLength);
-                return new ResourceRegion(resource, 0, rangeLength);
-            }
+            return new ResourceRegion(resource, start, rangeLength);
+        } else {
+            long rangeLength = min(CHUNK_SIZE_MED, contentLength);
+            return new ResourceRegion(resource, 0, rangeLength);
+        }
     }
 
     @Override
     public UrlResource getResourceByName(String name) {
         UrlResource video = null;
         try {
-            video = new UrlResource("file:"+videoLocation+ '/' + name);
+            video = new UrlResource("file:" + videoLocation + '/' + name);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

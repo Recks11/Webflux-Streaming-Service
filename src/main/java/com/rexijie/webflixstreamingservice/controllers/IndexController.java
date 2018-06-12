@@ -2,7 +2,6 @@ package com.rexijie.webflixstreamingservice.controllers;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import reactor.core.publisher.Mono;
 
@@ -18,7 +17,7 @@ public class IndexController {
     private String videoLocation;
 
     @GetMapping("/")
-    public Mono<String> index(Model model) throws Exception{
+    public Mono<String> index() throws Exception{
         List<String> videos = Files.list(Paths.get(videoLocation))
                 .map(path -> path.getFileName().toString())
                 .collect(Collectors.toList());
