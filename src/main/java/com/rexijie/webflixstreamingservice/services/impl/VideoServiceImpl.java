@@ -1,6 +1,8 @@
 package com.rexijie.webflixstreamingservice.services.impl;
 
 import com.rexijie.webflixstreamingservice.services.VideoService;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.ResourceRegion;
@@ -14,6 +16,7 @@ import java.net.MalformedURLException;
 import static java.lang.Long.min;
 
 @Service
+@Slf4j
 public class VideoServiceImpl implements VideoService {
     private static int byteLength = 1024;
     private static long CHUNK_SIZE_LOW = byteLength * 256;
@@ -31,7 +34,7 @@ public class VideoServiceImpl implements VideoService {
         try {
             contentLength = resource.contentLength();
         } catch (IOException e) {
-            e.printStackTrace();
+            // TODO logger log file not found
         }
         HttpRange range = headers.getRange().size() != 0 ? headers.getRange().get(0) : null;
 
