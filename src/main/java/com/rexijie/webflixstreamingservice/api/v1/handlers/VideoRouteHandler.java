@@ -28,9 +28,7 @@ public class VideoRouteHandler {
     public Mono<ServerResponse> getPartialVideoByName(ServerRequest request) {
 
         String name = request.pathVariable("name");
-
         HttpHeaders requestHeaders = request.headers().asHttpHeaders();
-
         UrlResource video = videoService.getResourceByName(name);
         ResourceRegion resourceRegion = videoService.getRegion(video, requestHeaders);
 
@@ -52,23 +50,30 @@ public class VideoRouteHandler {
     public Mono<ServerResponse> getFullLengthVideo(ServerRequest request) {
         String fileName = request.pathVariable("name");
         UrlResource video = videoService.getResourceByName(fileName);
-        long fileLength = 0L;
-        try {
-            fileLength = video.contentLength();
-        } catch (Exception e) {
-            //@TODO (Handle Exception)
-        }
-        return ServerResponse
+        Mono<UrlResource> videoResourceMono = Mono.just(videoService.getResourceByName(fileName));
+
+        Mono<Long> videoContentLength = videoResourceMono.map(videoResource -> {
+            long fileLength1 = 0L;
+            try {
+                fileLength1 = videoResource.contentLength();
+            } catch (Exception e) {
+                e.fillInStackTrace();
+            }
+            return fileLength1;
+        }).doOnError(Throwable::printStackTrace);
+
+        return videoContentLength.flatMap(videoLength -> ServerResponse
                 .ok()
                 .contentType(MediaTypeFactory.getMediaType(video)
                         .orElse(MediaType.APPLICATION_OCTET_STREAM))
-                .contentLength(fileLength)
+                .contentLength(videoLength)
                 .header(HttpHeaders.CACHE_CONTROL, "no-cache")
                 .body(Mono.just(video), UrlResource.class)
                 .flatMap(response -> {
-                    if (response.headers().getContentLength() == 0)
+                    if (response.headers().getContentLength() == 0) {
                         return Mono.error(new VideoNotFoundException());
+                    }
                     return Mono.just(response);
-                });
+                }));
     }
 }

@@ -18,11 +18,6 @@ public class IndexController {
 
     @GetMapping("/")
     public Mono<String> index() throws Exception{
-        List<String> videos = Files.list(Paths.get(videoLocation))
-                .map(path -> path.getFileName().toString())
-                .collect(Collectors.toList());
-
-        System.out.println(videos.toString());
         return Mono.just("index");
     }
 }
