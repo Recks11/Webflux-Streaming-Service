@@ -21,6 +21,10 @@ public class CustomExceptionHandler extends WebFluxResponseStatusExceptionHandle
 
     private Log logger = LogFactory.getLog(CustomExceptionHandler.class);
 
+    public CustomExceptionHandler() {
+        logger.info("Initialising custom exception handler");
+    }
+
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
         HttpStatus status = super.determineStatus(ex);
@@ -28,12 +32,13 @@ public class CustomExceptionHandler extends WebFluxResponseStatusExceptionHandle
 
         Error error = Error.builder()
                 .timestamp(simpleDate.format(new Date()))
-                .status(status.value())
+                .status(status != null ? status.value() : 0)
+                .path(exchange.getRequest().getPath().toString())
                 .build();
 
         if (status != null && exchange.getResponse().setStatusCode(status)) {
             if (status == HttpStatus.NOT_FOUND) {
-                exchange.getResponse().setStatusCode(HttpStatus.OK);
+                exchange.getResponse().setStatusCode(HttpStatus.NOT_FOUND);
                 error.setError("Route Not Found");
                 logger.error(buildResponse(exchange, ex));
                 logger.info(ex.getMessage());

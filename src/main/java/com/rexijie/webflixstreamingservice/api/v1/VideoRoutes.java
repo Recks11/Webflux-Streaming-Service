@@ -16,11 +16,10 @@ public class VideoRoutes {
     @Bean
     RouterFunction<ServerResponse> videoEndPoint(VideoRouteHandler videoRouteHandler) {
 
-
         return route(GET("/video"), videoRouteHandler::returnPath)
                 .andRoute(GET("/video/{name}"), videoRouteHandler::getPartialVideoByName)
                 .andRoute(GET("/video/{name}/full"), videoRouteHandler::getFullLengthVideo)
                 .filter((request, next) -> next.handle(request)
-                        .onErrorResume(ErrorHandler::handleError));
+                        .onErrorResume(throwable -> ErrorHandler.handleError(throwable, request)));
     }
 }

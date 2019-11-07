@@ -5,10 +5,10 @@
 
     <groupId>com.rexijie</groupId>
     <artifactId>webflix-streaming-service</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
 
-    <name>webflix streaming service</name>
+    <name>webflux streaming service</name>
     <description>Demo project for Spring Boot</description>
 
     <parent>
