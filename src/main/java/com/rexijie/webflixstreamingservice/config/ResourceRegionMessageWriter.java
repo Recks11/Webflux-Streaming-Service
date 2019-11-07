@@ -39,17 +39,27 @@ public class ResourceRegionMessageWriter implements HttpMessageWriter<ResourceRe
 
     private static Optional<Mono<Void>> zeroCopy(Resource resource, ResourceRegion resourceRegion,
                                                  ReactiveHttpOutputMessage message) {
-        if (message instanceof ZeroCopyHttpOutputMessage && resource.isFile()) {
-            try {
-                File file = resource.getFile();
+        Mono<File> internalFileMono = Mono.just(resource)
+                .map(resourceData -> {
+                    File file;
+                    try {
+                        file = resourceData.getFile();
+                    } catch (Exception e) {
+                        throw Exceptions.propagate(e);
+                    }
+                    return file;
+                });
+
+        Mono<Void> voidMono = internalFileMono.flatMap(file -> {
+            if (message instanceof ZeroCopyHttpOutputMessage && resource.isFile()) {
                 long position = resourceRegion.getPosition();
                 long count = resourceRegion.getCount();
-                return Optional.of(((ZeroCopyHttpOutputMessage) message).writeWith(file, position, count));
-            } catch (Exception e) {
-                //Do Nothing
+                return ((ZeroCopyHttpOutputMessage) message).writeWith(file, position, count);
             }
-        }
-        return Optional.empty();
+            return Mono.empty();
+        });
+
+        return Optional.of(voidMono);
     }
 
     private Mono<Void> writeSingleRegion(ResourceRegion region,
@@ -90,6 +100,7 @@ public class ResourceRegionMessageWriter implements HttpMessageWriter<ResourceRe
                             ResolvableType elementType, MediaType mediaType,
                             ReactiveHttpOutputMessage message,
                             Map<String, Object> hints) {
+        //@TODO implement this section
         return null;
     }
 
@@ -133,20 +144,22 @@ public class ResourceRegionMessageWriter implements HttpMessageWriter<ResourceRe
 
         return inputStreamMono.zipWith(contentLengthMono, (resourceRegion, contentLength) -> {
             long startPosition = resourceRegion.getPosition(); //Where zero copy starts
-            long endPosition =  min(startPosition + resourceRegion.getCount() - 1, contentLength - 1); //where zero copy ends relative to start position
+            long endPosition = min(startPosition + resourceRegion.getCount() - 1, contentLength - 1); //where zero copy ends relative to start position
             response.setStatusCode(HttpStatus.PARTIAL_CONTENT);
             MediaType resourceMediaType = getResourceMediaType(mediaType, resourceRegion.getResource());
             headers.setContentType(resourceMediaType);
             headers.add(HttpHeaders.CONTENT_RANGE, "bytes " + startPosition + '-' + endPosition + '/' + contentLength);
             headers.setContentLength(endPosition - startPosition + 1);
 
-            return zeroCopy(resourceRegion.getResource(), resourceRegion, response )
+            return zeroCopy(resourceRegion.getResource(), resourceRegion, response)
                     .orElseGet(() -> {
                         Mono<ResourceRegion> input = Mono.just(resourceRegion);
                         Flux<DataBuffer> body = this.resourceRegionEncoder.encode(input, response.bufferFactory(), REGION_TYPE, resourceMediaType, Collections.emptyMap());
                         return response.writeWith(body);
                     });
         }).flatMap(voidMono -> voidMono)
-                .doOnError(t -> {throw Exceptions.propagate(t);});
+                .doOnError(t -> {
+                    throw Exceptions.propagate(t);
+                });
     }
 }

@@ -30,7 +30,7 @@ public class ErrorHandler {
     public static Mono<ServerResponse> handleError(Throwable throwable, ServerRequest request) {
 
         if (throwable instanceof VideoNotFoundException) {
-            return handleNotFound(request);
+            return handleNotFound(request, throwable);
         }
 
         return ServerResponse
@@ -39,16 +39,18 @@ public class ErrorHandler {
                 .build();
     }
 
-    private static Mono<ServerResponse> handleNotFound(ServerRequest request) {
+    private static Mono<ServerResponse> handleNotFound(ServerRequest request, Throwable throwable) {
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-YYYY HH:mm:ss");
         String errorDate = dateFormat.format(new Date());
         Error errorResponse = Error.builder()
                 .status(404)
                 .path(request.path())
-                .error("Video not found")
+                .error("Video not found. It most likely does not exist")
                 .timestamp(errorDate)
                 .build();
+
+        logger.error("The video at ["+ request.path() + "] could not be found");
         return ServerResponse.status(HttpStatus.NOT_FOUND)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(errorResponse), Error.class);
