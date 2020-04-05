@@ -24,9 +24,10 @@ import static java.lang.Long.min;
 public class VideoServiceImpl implements VideoService {
     private static final Logger logger = LoggerFactory.getLogger(VideoServiceImpl.class);
     private static int byteLength = 1024;
-    private static long CHUNK_SIZE_LOW = byteLength * 256;
-    private static long CHUNK_SIZE_MED = byteLength * 512;
-    private static long CHUNK_SIZE_HIGH = byteLength * 1024;
+    private static long CHUNK_SIZE_VERY_LOW = byteLength * 256;
+    private static long CHUNK_SIZE_LOW = byteLength * 512;
+    private static long CHUNK_SIZE_MED = byteLength * 1024;
+    private static long CHUNK_SIZE_HIGH = byteLength * 2048;
     private static long CHUNK_SIZE_VERY_HIGH = CHUNK_SIZE_HIGH * 2;
     @Value("${video.location}")
     private String videoLocation;
