@@ -29,3 +29,5 @@ videos/*
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+.elasticbeanstalk/
+deployments/.elasticbeanstalk/
