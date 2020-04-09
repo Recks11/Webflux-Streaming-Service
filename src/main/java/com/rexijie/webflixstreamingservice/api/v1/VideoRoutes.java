@@ -17,7 +17,7 @@ public class VideoRoutes {
     RouterFunction<ServerResponse> videoEndPoint(VideoRouteHandler videoRouteHandler) {
 
         return route(GET("/video"), videoRouteHandler::returnPath)
-                .andRoute(GET("/video/{name}"), videoRouteHandler::getPartialVideoByName)
+                .andRoute(GET("/video/{name}"), videoRouteHandler::getVideoRegion)
                 .andRoute(GET("/video/{name}/full"), videoRouteHandler::getFullLengthVideo)
                 .filter((request, next) -> next.handle(request)
                         .onErrorResume(throwable -> ErrorHandler.handleError(throwable, request)));

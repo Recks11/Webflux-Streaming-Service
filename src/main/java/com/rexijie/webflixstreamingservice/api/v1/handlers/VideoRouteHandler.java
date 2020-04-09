@@ -25,37 +25,21 @@ public class VideoRouteHandler {
         return ServerResponse.ok().body(Mono.just(request.path()), String.class);
     }
 
-    public Mono<ServerResponse> getPartialVideoByName(ServerRequest request) {
+    public Mono<ServerResponse> getVideoRegion(ServerRequest request) {
         String name = request.pathVariable("name");
         HttpHeaders requestHeaders = request.headers().asHttpHeaders();
         Mono<UrlResource> videoResourceMono = videoService.getResourceByName(name);
         Mono<ResourceRegion> resourceRegionMono = videoService.getRegion(videoResourceMono, requestHeaders);
 
-        return resourceRegionMono.zipWith(videoResourceMono, (resourceRegion, video) -> ServerResponse
-                .status(HttpStatus.PARTIAL_CONTENT)
-                .contentType(MediaTypeFactory.getMediaType(video)
-                        .orElse(MediaType.APPLICATION_OCTET_STREAM))
-                .contentLength(resourceRegion.getCount())
-                .headers(headers -> headers.setCacheControl(CacheControl.noCache()))
-                .body(resourceRegionMono, ResourceRegion.class))
-                .flatMap(serverResponseMono -> serverResponseMono)
+        return resourceRegionMono
+                .flatMap(resourceRegion -> ServerResponse
+                        .status(HttpStatus.PARTIAL_CONTENT)
+                        .contentLength(resourceRegion.getCount())
+                        .headers(headers -> headers.setCacheControl(CacheControl.noCache()))
+                        .body(resourceRegionMono, ResourceRegion.class))
                 .doOnError(throwable -> {
                     throw Exceptions.propagate(throwable);
                 });
-
-//        return ServerResponse
-//                .status(HttpStatus.PARTIAL_CONTENT)
-//                .contentType(MediaTypeFactory.getMediaType(video)
-//                        .orElse(MediaType.APPLICATION_OCTET_STREAM))
-//                .contentLength(resourceRegion.getCount())
-//                .headers(headers -> headers.setCacheControl(CacheControl.noCache()))
-//                .body(Mono.just(resourceRegion), ResourceRegion.class)
-//                .flatMap(response -> {
-//                    if (response.headers().getContentLength() == 0) {
-//                        return Mono.error(new VideoNotFoundException());
-//                    }
-//                    return Mono.just(response);
-//                });
     }
 
     /**
@@ -68,18 +52,17 @@ public class VideoRouteHandler {
         String fileName = request.pathVariable("name");
 
         Mono<UrlResource> videoResourceMono = videoService.getResourceByName(fileName);
-        Mono<Long> videoContentLength = videoService.getSafeContentLengthForResource(videoResourceMono);
 
-        return videoContentLength
-                .zipWith(videoResourceMono,
-                        (fileLength, urlResource) -> ServerResponse
-                                .ok()
-                                .contentType(MediaTypeFactory.getMediaType(urlResource)
-                                        .orElse(MediaType.APPLICATION_OCTET_STREAM))
-                                .contentLength(fileLength)
-                                .headers(httpHeaders -> httpHeaders.setCacheControl(CacheControl.noCache()))
-                                .body(videoResourceMono, UrlResource.class))
-                .flatMap(serverResponseMono -> serverResponseMono);
+
+        return videoResourceMono
+                .flatMap(urlResource -> {
+                    long contentLength = videoService.lengthOf(urlResource);
+                    return ServerResponse
+                            .ok()
+                            .contentLength(contentLength)
+                            .headers(httpHeaders -> httpHeaders.setCacheControl(CacheControl.noCache()))
+                            .body(videoResourceMono, UrlResource.class);
+                });
 
     }
 }
