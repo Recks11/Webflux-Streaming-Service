@@ -35,6 +35,6 @@ public class WebFluxConfig implements WebFluxConfigurer {
 
     @Override
     public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
-        configurer.customCodecs().writer(new ResourceRegionMessageWriter());
+        configurer.customCodecs().register(new ResourceRegionMessageWriter()); // for resource region
     }
 }
