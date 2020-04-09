@@ -41,13 +41,11 @@ public class CustomExceptionHandler extends WebFluxResponseStatusExceptionHandle
                 error.setError("Route Not Found");
                 logger.error(buildResponse(exchange, ex));
                 logger.info(ex.getMessage());
-            }
-            else if (status == HttpStatus.BAD_REQUEST) {
+            } else if (status == HttpStatus.BAD_REQUEST) {
                 exchange.getResponse().setStatusCode(HttpStatus.OK);
                 error.setError("Bad Request");
                 logger.warn(buildResponse(exchange, ex));
-            }
-            else if (status == HttpStatus.INTERNAL_SERVER_ERROR){
+            } else if (status == HttpStatus.INTERNAL_SERVER_ERROR) {
                 exchange.getResponse().setStatusCode(HttpStatus.OK);
                 error.setError("The Server Encountered an error");
                 logger.trace(buildResponse(exchange, ex));

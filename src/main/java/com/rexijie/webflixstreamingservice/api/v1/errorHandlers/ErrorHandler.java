@@ -46,7 +46,7 @@ public class ErrorHandler {
                 .timestamp(errorDate)
                 .build();
 
-        logger.error("The video at ["+ request.path() + "] could not be found");
+        logger.error("The video at [" + request.path() + "] could not be found");
         return ServerResponse.status(HttpStatus.NOT_FOUND)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(errorResponse), Error.class);

@@ -26,7 +26,7 @@ import static java.lang.Math.min;
 
 /**
  * {@code HttpMessageWriter} that can write a {@link ResourceRegion}.
- *
+ * <p>
  * This class was directly converted from the given {@link org.springframework.http.codec.ResourceHttpMessageWriter}
  * and adapted to write multiple resource regions in a single header
  */
