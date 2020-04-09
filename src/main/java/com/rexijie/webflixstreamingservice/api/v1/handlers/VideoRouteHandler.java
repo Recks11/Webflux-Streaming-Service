@@ -1,9 +1,9 @@
 package com.rexijie.webflixstreamingservice.api.v1.handlers;
 
+import com.rexijie.webflixstreamingservice.services.IFileService;
 import com.rexijie.webflixstreamingservice.services.VideoService;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.CacheControl;
@@ -17,35 +17,24 @@ import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Component
 public class VideoRouteHandler {
 
     private final VideoService videoService;
-    @Value("${video.location}")
-    private String videoLocation;
+    private final IFileService fileService;
 
     @Autowired
-    public VideoRouteHandler(VideoService videoService) {
+    public VideoRouteHandler(VideoService videoService, IFileService fileService) {
         this.videoService = videoService;
+        this.fileService = fileService;
     }
 
 
     public Mono<ServerResponse> listVideos(ServerRequest request) {
 
-        Flux<Path> files = Flux.create(emitter -> {
-            try {
-                Files.list(Paths.get(videoLocation))
-                        .forEach(emitter::next);
-            } catch (IOException e) {
-                emitter.error(e);
-            }
-            emitter.complete();
-        });
+        Flux<Path> files = fileService.getAllFiles();
 
         Flux<VideoDetails> videoDetailsFlux = files
                 .map(path -> {
