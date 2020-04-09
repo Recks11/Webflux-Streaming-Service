@@ -36,9 +36,9 @@ public class VideoServiceImpl implements VideoService {
     public Mono<ResourceRegion> getRegion(Mono<UrlResource> resource, HttpHeaders headers) {
         HttpRange range = headers.getRange().size() != 0 ? headers.getRange().get(0) : null;
 
-        Mono<Long> contentLengthMono = this.getSafeContentLengthForResource(resource);
 
-        return resource.zipWith(contentLengthMono, (urlResource, contentLength) -> {
+        return resource.map(urlResource -> {
+            long contentLength = lengthOf(urlResource);
             if (range != null) {
                 long start = range.getRangeStart(contentLength);
                 long end = range.getRangeEnd(contentLength);
@@ -57,28 +57,27 @@ public class VideoServiceImpl implements VideoService {
 
     @Override
     public Mono<UrlResource> getResourceByName(String name) {
-        UrlResource video;
-        try {
-            video = new UrlResource("file:" + videoLocation + '/' + name);
-        } catch (MalformedURLException e) {
-            throw Exceptions.propagate(e);
-        }
-        return Mono.just(video);
-    }
-
-    @Override
-    public Mono<Long> getSafeContentLengthForResource(Mono<UrlResource> urlResource) {
-        return urlResource.map(videoResource -> {
-            long fileLength;
+        return Mono.<UrlResource>create(monoSink -> {
             try {
-                fileLength = videoResource.contentLength();
-            } catch (IOException e) {
-                logger.error("service could not get resource because the resource does not exist");
-                throw Exceptions.propagate(new VideoNotFoundException());
+                UrlResource video = new UrlResource("file:" + videoLocation + '/' + name);
+                monoSink.success(video);
+            } catch (MalformedURLException e) {
+                monoSink.error(e);
             }
-            return fileLength;
         }).doOnError(throwable -> {
             throw Exceptions.propagate(throwable);
         });
+    }
+
+    @Override
+    public long lengthOf(UrlResource urlResource) {
+        long fileLength;
+        try {
+            fileLength = urlResource.contentLength();
+        } catch (IOException e) {
+            logger.error("service could not get resource because the resource does not exist");
+            throw Exceptions.propagate(new VideoNotFoundException());
+        }
+        return fileLength;
     }
 }

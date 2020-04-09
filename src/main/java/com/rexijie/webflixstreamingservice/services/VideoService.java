@@ -11,5 +11,5 @@ public interface VideoService {
 
     Mono<UrlResource> getResourceByName(String name);
 
-    Mono<Long> getSafeContentLengthForResource(Mono<UrlResource> urlResource);
+    long lengthOf(UrlResource urlResource);
 }
