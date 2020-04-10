@@ -1,7 +1,7 @@
 /target/
 videos/*
 !videos/Kevon-Carter.mp4
-!.mvn/wrapper/maven-wrapper.jar
+!.mvn
 
 ### STS ###
 .apt_generated
@@ -29,5 +29,6 @@ videos/*
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
-.elasticbeanstalk/
-deployments/.elasticbeanstalk/
+.elasticbeanstalk
+deployments
+
