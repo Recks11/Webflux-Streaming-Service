@@ -11,11 +11,13 @@ import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.server.ServerRequest;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Long.min;
 
@@ -23,19 +25,26 @@ import static java.lang.Long.min;
 @Slf4j
 public class VideoServiceImpl implements VideoService {
     private static final Logger logger = LoggerFactory.getLogger(VideoServiceImpl.class);
-    private static int byteLength = 1024;
-    private static long CHUNK_SIZE_VERY_LOW = byteLength * 256;
-    private static long CHUNK_SIZE_LOW = byteLength * 512;
-    private static long CHUNK_SIZE_MED = byteLength * 1024;
-    private static long CHUNK_SIZE_HIGH = byteLength * 2048;
-    private static long CHUNK_SIZE_VERY_HIGH = CHUNK_SIZE_HIGH * 2;
+    private static final long BYTE_LENGTH = 1024;
+    private static final long CHUNK_SIZE_VERY_LOW = BYTE_LENGTH * 256;
+    private static final long CHUNK_SIZE_LOW = BYTE_LENGTH * 512;
+    private static final long CHUNK_SIZE_MED = BYTE_LENGTH * 1024;
+    private static final long CHUNK_SIZE_HIGH = BYTE_LENGTH * 2048;
+    private static final long CHUNK_SIZE_VERY_HIGH = CHUNK_SIZE_HIGH * 2;
     @Value("${video.location}")
     private String videoLocation;
 
     @Override
-    public Mono<ResourceRegion> getRegion(Mono<UrlResource> resource, HttpHeaders headers) {
-        HttpRange range = headers.getRange().size() != 0 ? headers.getRange().get(0) : null;
+    public Mono<ResourceRegion> getRegion(Mono<UrlResource> resource, ServerRequest request) {
+        HttpHeaders headers = request.headers().asHttpHeaders();
+        HttpRange range = !headers.getRange().isEmpty() ? headers.getRange().get(0) : null;
 
+        AtomicInteger sizeInt = new AtomicInteger();
+
+        request.queryParam("partial").ifPresent(val ->
+           sizeInt.set(Integer.parseInt(val)));
+
+        long chunkSize = getChunkSize(sizeInt.get());
 
         return resource.map(urlResource -> {
             long contentLength = lengthOf(urlResource);
@@ -43,11 +52,11 @@ public class VideoServiceImpl implements VideoService {
                 long start = range.getRangeStart(contentLength);
                 long end = range.getRangeEnd(contentLength);
                 long resourceLength = end - start + 1;
-                long rangeLength = min(CHUNK_SIZE_MED, resourceLength);
+                long rangeLength = min(chunkSize, resourceLength);
 
                 return new ResourceRegion(urlResource, start, rangeLength);
             } else {
-                long rangeLength = min(CHUNK_SIZE_MED, contentLength);
+                long rangeLength = min(chunkSize, contentLength);
                 return new ResourceRegion(urlResource, 0, rangeLength);
             }
         }).doOnError(throwable -> {
@@ -59,7 +68,7 @@ public class VideoServiceImpl implements VideoService {
     public Mono<UrlResource> getResourceByName(String name) {
         return Mono.<UrlResource>create(monoSink -> {
             try {
-                UrlResource video = new UrlResource("file:" + videoLocation + '/' + name);
+                UrlResource video = new UrlResource("file", videoLocation + '/' + name);
                 monoSink.success(video);
             } catch (MalformedURLException e) {
                 monoSink.error(e);
@@ -79,5 +88,27 @@ public class VideoServiceImpl implements VideoService {
             throw Exceptions.propagate(new VideoNotFoundException());
         }
         return fileLength;
+    }
+
+    public long getChunkSize (int size) {
+        long responseSize;
+        switch (size) {
+            case 1:
+                responseSize = CHUNK_SIZE_VERY_LOW;
+                break;
+            case 2:
+                responseSize = CHUNK_SIZE_LOW;
+                break;
+            case 4:
+                responseSize = CHUNK_SIZE_HIGH;
+                break;
+            case 5:
+                responseSize = CHUNK_SIZE_VERY_HIGH;
+                break;
+            default:
+                responseSize = CHUNK_SIZE_MED;
+        }
+
+        return responseSize;
     }
 }
