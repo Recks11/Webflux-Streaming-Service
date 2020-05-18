@@ -8,18 +8,20 @@ import lombok.Data;
 @Builder
 public class Error {
     @JsonProperty("time")
-    public String timestamp;
-    public String error;
-    public Integer status;
-    public String path;
+    private String timestamp;
+    private String err;
+    private String message;
+    private Integer status;
+    private String path;
 
     @Override
     public String toString() {
         return "{" +
-                "\"timestamp\":\"" + timestamp + '\"' +
-                ", \"error\":\"" + error + '\"' +
-                ", \"status\" : " + status +
-                ", \"path\": \"" + path + '\"' +
+                "\"status\":" + status +
+                ",\"timestamp\":\"" + timestamp + '\"' +
+                ",\"error\":\"" + err + '\"' +
+                ",\"message\":\"" + message + '\"' +
+                ",\"path\": \"" + path + '\"' +
                 '}';
     }
 }
