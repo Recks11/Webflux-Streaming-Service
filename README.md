@@ -20,8 +20,9 @@ To see a list of all videos in the `Video` directory, navigate to `http://localh
 To play a video, navigate to `http://localhost:8080/videos/{name}`
 
 API Routes:
- - `/video/{name}` - serves file in chunks using the range header.
- - `/video/{name}/full` - Serves the full length file using the whole range.
+ - `/video/{name}` - Serves the full length file using the whole range.
+ - `/video/{name}?partial=3` - serves file in chunks using the range header chunk size is determined using the value 
+ passed to the partial param. this can be an integer between 1 and 5
  
  > NOTE: This API can also serve documents and images, using the `/video/{name}` route, but the range will have to be set manually.
  it can also be adapted to serve large files in custom chunk sizes which can then be downloaded in parallel
