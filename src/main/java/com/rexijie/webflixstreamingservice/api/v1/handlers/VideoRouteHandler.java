@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -54,11 +53,10 @@ public class VideoRouteHandler {
                 .body(videoDetailsFlux, VideoDetails.class);
     }
 
-    public Mono<ServerResponse> getVideoRegion(ServerRequest request) {
+    public Mono<ServerResponse> getPartialContent(ServerRequest request) {
         String name = request.pathVariable("name");
-        HttpHeaders requestHeaders = request.headers().asHttpHeaders();
         Mono<UrlResource> videoResourceMono = videoService.getResourceByName(name);
-        Mono<ResourceRegion> resourceRegionMono = videoService.getRegion(videoResourceMono, requestHeaders);
+        Mono<ResourceRegion> resourceRegionMono = videoService.getRegion(videoResourceMono, request);
 
         return resourceRegionMono
                 .flatMap(resourceRegion -> ServerResponse
@@ -76,7 +74,7 @@ public class VideoRouteHandler {
      * videoResource.contentLength() is a blocking call, therefore it is wrapped in a Mono.
      * it returns a FileNotFound exception which is wrapped and propagated down the stream
      */
-    public Mono<ServerResponse> getFullLengthVideo(ServerRequest request) {
+    public Mono<ServerResponse> getFullContent(ServerRequest request) {
 
         String fileName = request.pathVariable("name");
 
