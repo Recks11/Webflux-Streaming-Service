@@ -32,11 +32,11 @@ import static java.lang.Math.min;
  */
 public class ResourceRegionMessageWriter implements HttpMessageWriter<ResourceRegion> {
 
-    private static ResolvableType REGION_TYPE = ResolvableType.forClass(ResourceRegion.class);
+    private static final ResolvableType REGION_TYPE = ResolvableType.forClass(ResourceRegion.class);
 
-    private ResourceRegionEncoder resourceRegionEncoder;
+    private final ResourceRegionEncoder resourceRegionEncoder;
 
-    private List<MediaType> mediaTypes;
+    private final List<MediaType> mediaTypes;
 
     public ResourceRegionMessageWriter() {
         this.resourceRegionEncoder = new ResourceRegionEncoder();
@@ -160,7 +160,7 @@ public class ResourceRegionMessageWriter implements HttpMessageWriter<ResourceRe
 
         Mono<ResourceRegion> inputStreamMono = Mono.from(inputStream);
 
-        return inputStreamMono.flatMap((resourceRegion) -> {
+        return inputStreamMono.flatMap(resourceRegion -> {
             long contentLength = lengthOf(resourceRegion);
             long startPosition = resourceRegion.getPosition(); //Where zero copy starts
             long endPosition = min(startPosition + resourceRegion.getCount() - 1, contentLength - 1); //where zero copy ends relative to start position
