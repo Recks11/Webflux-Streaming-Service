@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "video.location",
+      "type": "java.lang.String",
+      "description": "Location of video files relative to jar file."
+    }
+  ]
+}
