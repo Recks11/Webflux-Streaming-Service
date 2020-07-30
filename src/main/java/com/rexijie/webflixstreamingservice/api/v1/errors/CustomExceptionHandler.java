@@ -34,8 +34,11 @@ public class CustomExceptionHandler extends WebFluxResponseStatusExceptionHandle
 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
-        if (ex.getCause() instanceof ClosedChannelException)
+        if (ex.getCause() instanceof ClosedChannelException) {
+            logger.info("CLOSED CHANNEL ERROR OBSERVED");
+            // ignore after log
             return Mono.empty();
+        }
 
         ServerHttpResponse response = exchange.getResponse();
         ServerHttpRequest request = exchange.getRequest();
@@ -54,15 +57,17 @@ public class CustomExceptionHandler extends WebFluxResponseStatusExceptionHandle
         if (status != null) {
             if (status == HttpStatus.NOT_FOUND) {
                 error.setErr("Route Not Found");
-                logger.error(buildResponse(exchange, ex));
+                logger.warn(buildResponse(exchange, ex));
             } else if (status == HttpStatus.BAD_REQUEST) {
                 error.setErr("Bad Request");
-                logger.warn(buildResponse(exchange, ex));
+                logger.warn(buildResponse(exchange, ex)); // bad routes are warn level
             } else if (status == HttpStatus.INTERNAL_SERVER_ERROR) {
-                error.setErr("The Server Encountered an error");
-                logger.trace(buildResponse(exchange, ex));
+                error.setErr("The Serve" +
+                        "r Encountered an error");
+                logger.error(buildResponse(exchange, ex), ex); // internal server errors are debug level
             }
         } else {
+            // TODO(Refactor)
             if (ex instanceof NumberFormatException) {
                 response.setStatusCode(HttpStatus.BAD_REQUEST);
                 error.setErr("The value passed is not an integer");
@@ -89,6 +94,6 @@ public class CustomExceptionHandler extends WebFluxResponseStatusExceptionHandle
     }
 
     private String buildResponse(ServerWebExchange exchange, Throwable ex) {
-        return ("Using Custom Handler - Failed to handle request [" + exchange.getRequest().getMethod() + " " + exchange.getRequest().getURI() + "]: " + ex.getMessage());
+        return ("Failed to handle error in request [" + exchange.getRequest().getMethod() + " " + exchange.getRequest().getURI() + "]: " + ex.getMessage());
     }
 }
