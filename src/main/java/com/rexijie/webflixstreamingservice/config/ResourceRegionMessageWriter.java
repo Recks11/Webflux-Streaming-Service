@@ -15,6 +15,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,24 +115,32 @@ public class ResourceRegionMessageWriter implements HttpMessageWriter<ResourceRe
                                      ResolvableType elementType, MediaType mediaType,
                                      ReactiveHttpOutputMessage message,
                                      Map<String, Object> hints) {
+
         HttpHeaders headers = message.getHeaders();
-        MediaType resourceType = getResourceMediaType(mediaType, resourceRegion.getResource());
-        headers.setContentType(resourceType);
 
-        if (headers.getContentLength() < 0) {
-            long length = lengthOf(resourceRegion);
-            if (length != -1)
-                headers.setContentLength(length);
-        }
+        Mono<MediaType> mediaTypeMono = Mono.fromCallable(() -> getResourceMediaType(mediaType, resourceRegion.getResource()));
 
-        return zeroCopy(resourceRegion.getResource(), resourceRegion, message)
-                .orElseGet(() -> {
-                    Mono<ResourceRegion> input = Mono.just(resourceRegion);
-                    DataBufferFactory bufferFactory = message.bufferFactory();
-                    Flux<DataBuffer> body =
-                            this.resourceRegionEncoder.encode(input, bufferFactory, elementType, resourceType, hints);
-                    return message.writeWith(body);
-                });
+        Mono<Long> headersMono = Mono.fromCallable(() -> lengthOf(resourceRegion))
+                .filter(length -> length > -1)
+                .doOnNext(headers::setContentLength);
+
+
+        return headersMono.zipWith(mediaTypeMono)
+                .map((Tuple2<Long, MediaType> objects) -> {
+                    MediaType resourceType = objects.getT2();
+                    headers.setContentType(resourceType);
+                    return resourceType;
+                })
+                .flatMap(resourceType ->
+                        zeroCopy(resourceRegion.getResource(), resourceRegion, message)
+                                .orElseGet(() -> {
+
+                                    Mono<ResourceRegion> input = Mono.just(resourceRegion);
+                                    DataBufferFactory bufferFactory = message.bufferFactory();
+                                    Flux<DataBuffer> body =
+                                            this.resourceRegionEncoder.encode(input, bufferFactory, elementType, resourceType, hints);
+                                    return message.writeWith(body);
+                                }));
     }
 
     /**

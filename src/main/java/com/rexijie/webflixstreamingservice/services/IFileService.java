@@ -22,6 +22,7 @@ public interface IFileService {
         return Flux.using(() -> Files.list(path),
                 Flux::fromStream,
                 BaseStream::close)
+                .doOnDiscard(BaseStream.class, BaseStream::close)
                 .doOnError(err -> {
                     throw Exceptions.propagate(
                             new BadResourceLocationException("error retrieving data from video location", (IOException) err));
