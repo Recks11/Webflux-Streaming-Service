@@ -11,7 +11,6 @@ Video streaming implemented with Spring WebFLux.
 - run `./mvnw spring-boot:run` 
 
 
-
 ## API
 Videos are served from the videos directory, You can change the videos directory to suit your needs in the `application.properties` file.
 
@@ -26,6 +25,27 @@ API Routes:
  
  > NOTE: This API can also serve documents and images, using the `/video/{name}` route, but the range will have to be set manually.
  it can also be adapted to serve large files in custom chunk sizes which can then be downloaded in parallel
+
+
+## DOCKER IMAGE
+the image is available in docker hub at rexijie/webflix:1.1.4
+```sh
+$ docker pull rexijie/webflix:1.1.4
+```
+
+to run the image, you need to specify  the active profile to docker using `spring.profiles.active`,  then specify the video location within the container using the `service.video.location` environment  variable and then bind mount that location to your video directory
+
+
+an example
+```sh
+$ docker container run \
+--name webflix \
+-e spring.profiles.active=docker \
+-e service.video.location=/mnt/videos
+--mount type=bind,source=/path/to/local/files,target=/mnt/videos \
+-p8080:8080 \
+rexijie/webflix:1.1.4
+```
 
 ## BUILDING THE PROJECT
 To build the project run the maven package command
