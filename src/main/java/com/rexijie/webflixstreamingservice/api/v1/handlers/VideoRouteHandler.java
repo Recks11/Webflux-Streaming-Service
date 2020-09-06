@@ -1,5 +1,6 @@
 package com.rexijie.webflixstreamingservice.api.v1.handlers;
 
+import com.rexijie.webflixstreamingservice.model.Video;
 import com.rexijie.webflixstreamingservice.services.IFileService;
 import com.rexijie.webflixstreamingservice.services.VideoService;
 import lombok.Data;
@@ -16,8 +17,6 @@ import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.nio.file.Path;
-
 @Component
 public class VideoRouteHandler {
 
@@ -33,15 +32,15 @@ public class VideoRouteHandler {
 
     public Mono<ServerResponse> listVideos(ServerRequest request) {
 
-        Flux<Path> files = fileService.getAllFiles();
+        Flux<Video> videos = videoService.getAllVideos();
 
-        Flux<VideoDetails> videoDetailsFlux = files
-                .map(path -> {
+        Flux<VideoDetails> videoDetailsFlux = videos
+                .map(video -> {
                     VideoDetails videoDetails = new VideoDetails();
-                    videoDetails.setName(path.getFileName().toString());
-                    videoDetails.setLink(request.uri().toString() + '/' + videoDetails.getName());
+                    videoDetails.setName(video.getName());
+                    videoDetails.setLink(request.uri().toString() + '/' + video.getName());
                     return videoDetails;
-                }).filter(videoDetails -> !videoDetails.getName().startsWith("."))
+                })
                 .doOnError(t -> {
                     throw Exceptions.propagate(t);
                 });
@@ -55,8 +54,7 @@ public class VideoRouteHandler {
 
     public Mono<ServerResponse> getPartialContent(ServerRequest request) {
         String name = request.pathVariable("name");
-        Mono<UrlResource> videoResourceMono = videoService.getResourceByName(name);
-        Mono<ResourceRegion> resourceRegionMono = videoService.getRegion(videoResourceMono, request);
+        Mono<ResourceRegion> resourceRegionMono = videoService.getRegion(name, request);
 
         return resourceRegionMono
                 .flatMap(resourceRegion -> ServerResponse

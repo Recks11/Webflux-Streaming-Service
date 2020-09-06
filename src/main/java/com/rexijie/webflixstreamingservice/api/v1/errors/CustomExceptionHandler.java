@@ -56,7 +56,7 @@ public class CustomExceptionHandler extends WebFluxResponseStatusExceptionHandle
 
         if (status != null) {
             if (status == HttpStatus.NOT_FOUND) {
-                error.setErr("Route Not Found");
+                error.setErr("Not Found");
                 logger.warn(buildResponse(exchange, ex));
             } else if (status == HttpStatus.BAD_REQUEST) {
                 error.setErr("Bad Request");

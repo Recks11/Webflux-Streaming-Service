@@ -1,11 +1,12 @@
 package com.rexijie.webflixstreamingservice.services.impl;
 
 import com.rexijie.webflixstreamingservice.exceptions.VideoNotFoundException;
+import com.rexijie.webflixstreamingservice.model.Video;
+import com.rexijie.webflixstreamingservice.repository.VideoRepository;
 import com.rexijie.webflixstreamingservice.services.VideoService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpRange;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import reactor.core.Exceptions;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
@@ -31,21 +33,26 @@ public class VideoServiceImpl implements VideoService {
     private static final long CHUNK_SIZE_MED = BYTE_LENGTH * 1024;
     private static final long CHUNK_SIZE_HIGH = BYTE_LENGTH * 2048;
     private static final long CHUNK_SIZE_VERY_HIGH = CHUNK_SIZE_HIGH * 2;
-    @Value("${video.location}")
-    private String videoLocation;
+
+    private final VideoRepository videoRepository;
+
+    public VideoServiceImpl(VideoRepository videoRepository) {
+        this.videoRepository = videoRepository;
+    }
 
     @Override
-    public Mono<ResourceRegion> getRegion(Mono<UrlResource> resource, ServerRequest request) {
+    public Mono<ResourceRegion> getRegion(String name, ServerRequest request) {
         HttpHeaders headers = request.headers().asHttpHeaders();
         HttpRange range = !headers.getRange().isEmpty() ? headers.getRange().get(0) : null;
 
         AtomicInteger sizeInt = new AtomicInteger();
 
         request.queryParam("partial").ifPresent(val ->
-           sizeInt.set(Integer.parseInt(val)));
+                sizeInt.set(Integer.parseInt(val)));
 
         long chunkSize = getChunkSize(sizeInt.get());
 
+        Mono<UrlResource> resource = getResourceByName(name);
         return resource.map(urlResource -> {
             long contentLength = lengthOf(urlResource);
             if (range != null) {
@@ -66,9 +73,14 @@ public class VideoServiceImpl implements VideoService {
 
     @Override
     public Mono<UrlResource> getResourceByName(String name) {
+        return videoRepository.getVideoByName(name)
+                .flatMap(this::createUriResourceFromVideo);
+    }
+
+    private Mono<UrlResource> createUriResourceFromVideo(Video videoObj) {
         return Mono.<UrlResource>create(monoSink -> {
             try {
-                UrlResource video = new UrlResource("file", videoLocation + '/' + name);
+                UrlResource video = new UrlResource(videoObj.getLocation().toUri());
                 monoSink.success(video);
             } catch (MalformedURLException e) {
                 monoSink.error(e);
@@ -76,6 +88,11 @@ public class VideoServiceImpl implements VideoService {
         }).doOnError(throwable -> {
             throw Exceptions.propagate(throwable);
         });
+    }
+
+    @Override
+    public Flux<Video> getAllVideos() {
+        return videoRepository.getAllVideos();
     }
 
     @Override
@@ -90,7 +107,7 @@ public class VideoServiceImpl implements VideoService {
         return fileLength;
     }
 
-    public long getChunkSize (int size) {
+    public long getChunkSize(int size) {
         long responseSize;
         switch (size) {
             case 1:
