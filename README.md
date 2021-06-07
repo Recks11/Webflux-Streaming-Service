@@ -28,9 +28,9 @@ API Routes:
 
 
 ## DOCKER IMAGE
-the image is available in docker hub at rexijie/webflix:1.1.4
+the image is available in docker hub at rexijie/webflix:tagname
 ```sh
-$ docker pull rexijie/webflix:1.1.4
+$ docker pull rexijie/webflix:1.2.0
 ```
 
 to run the image, you need to specify  the active profile to docker using `spring.profiles.active`,  then specify the video location within the container using the `service.video.location` environment  variable and then bind mount that location to your video directory
@@ -44,7 +44,7 @@ $ docker container run \
 -e service.video.location=/mnt/videos
 --mount type=bind,source=/path/to/local/files,target=/mnt/videos \
 -p8080:8080 \
-rexijie/webflix:1.1.4
+rexijie/webflix:1.2.0
 ```
 
 ## BUILDING THE PROJECT
