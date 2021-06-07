@@ -16,13 +16,15 @@ public class VideoRoutes {
 
     @Bean
     RouterFunction<ServerResponse> videoEndPoint(VideoRouteHandler videoRouteHandler) {
-        return route().nest(path("/videos"), builder -> builder
-                .GET("", videoRouteHandler::listVideos)
-                .nest(path("/{name}"), videoBuilder -> videoBuilder
-                        .GET("", param("partial"), videoRouteHandler::getPartialContent)
-                        .GET("", videoRouteHandler::getFullContent)
-                )
-        ).build();
+        return route()
+                .nest(
+                        path("/videos"), builder -> builder
+                                .GET("", videoRouteHandler::listVideos)
+                                .nest(path("/{name}"), videoBuilder -> videoBuilder
+                                        .GET("", param("partial"), videoRouteHandler::getPartialContent)
+                                        .GET("", videoRouteHandler::getFullContent)
+                                )
+                ).build();
     }
 
     private static RequestPredicate param(String parameter) {

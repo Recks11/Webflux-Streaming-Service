@@ -11,9 +11,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class Bootstrap implements CommandLineRunner {
-    @Value("${video.location}")
-    private String videoLocation;
-
     private final VideoRepository videoRepository;
     private final IFileService fileService;
 
